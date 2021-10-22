@@ -1,0 +1,70 @@
+###import
+import cv2
+import numpy as np
+from google.colab.patches import cv2_imshow
+
+###Verilen iki nokta arasındaki açıyı hesaplar
+def arctan_hesaplama(nokta1,nokta2):
+    y_fark = abs(nokta1[1]-nokta2[1])
+    x_fark = abs(nokta1[0]-nokta2[0])
+    alpha = np.arctan(y_fark/x_fark)
+    alpha = 90-(alpha*(180/(22/7)))
+    print(alpha)
+ 
+ 
+ ###Verilen iki nokta arasındaki eğimi hesaplar. Pozitif ise sağ, negatif ise sol
+ def eğim_hesapla(corner1,corner2):
+  global eğim
+  y_fark = corner1[1]-corner2[1]
+  x_fark = corner2[0]-corner1[0]
+  if x_fark==0:
+    eğim = 0
+  else:
+    eğim = y_fark/x_fark
+  return eğim
+  
+###resimdeki yol kısmını array olarak döndürür.
+def geçiş_tespit(img):
+  a,b = np.where(img==255)
+  return a,b
+
+###yolun köşe noktalarını belirler.
+def köşe_belirleme(liste_x,liste_y):
+  fark = abs(np.min(liste_y)-np.max(liste_y))
+  EP = fark*10/100
+  alt_sınır = np.max(liste_y)-EP
+  üst_sınır = np.min(liste_y)+EP
+  alt_noktalar = np.min(np.where(liste_y>alt_sınır))
+  üst_noktalar = np.max(np.where(liste_y<üst_sınır))
+  odak_liste_üst_y = liste_y[:üst_noktalar]
+  odak_liste_üst_x = liste_x[:üst_noktalar]
+
+  odak_liste_alt_x = liste_x[alt_noktalar:]
+  odak_liste_alt_y = liste_y[alt_noktalar:]
+
+  sol_üst_köşe = [np.min(odak_liste_üst_x),np.min(odak_liste_üst_y)]
+  sağ_üst_köşe = [np.max(odak_liste_üst_x),np.min(odak_liste_üst_y)]
+
+  sol_alt_köşe = [np.min(odak_liste_alt_x),np.max(odak_liste_alt_y)]
+  sağ_alt_köşe = [np.max(odak_liste_alt_x),np.max(odak_liste_alt_y)]
+
+  return (sol_üst_köşe,sağ_üst_köşe,sol_alt_köşe,sağ_alt_köşe)
+
+
+### Köşelere nokta koyar
+def nokta_koy(im,solü,sağü,sola,sağa):
+  cv2.circle(im,(solü[0],solü[1]),7,(0,0,255),-1) ###sağ alt
+  cv2.circle(im,(sağü[0],sağü[1]),7,(0,0,255),-1) ###sol üst
+
+  cv2.circle(im,(sola[0],sola[1]),7,(0,0,255),-1) ###sol alt
+  cv2.circle(im,(sağa[0],sağa[1]),7,(0,0,255),-1) ###sağ üst
+  cv2_imshow(im)
+
+
+###main code
+y_liste,x_liste = geçiş_tespit(im)
+LU,RU,LD,RD = köşe_belirleme(x_liste,y_liste)
+nokta_koy(im_renkli,LU,RU,LD,RD)
+arctan_hesaplama(RU,RD)
+eğim = eğim_hesapla(LU,LD)
+print(eğim)
